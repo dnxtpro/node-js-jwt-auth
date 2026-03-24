@@ -29,9 +29,14 @@ exports.signup = (req, res) => {
           });
         });
       } else {
-        // user role = 1
-        user.setRoles([1]).then(() => {
-          res.send({ message: "User registered successfully!" });
+        Role.findOne({ where: { name: "user" } }).then(role => {
+          if (!role) {
+            return res.status(500).send({ message: "Default role not found." });
+          }
+
+          user.setRoles([role.id]).then(() => {
+            res.send({ message: "User registered successfully!" });
+          });
         });
       }
     })
