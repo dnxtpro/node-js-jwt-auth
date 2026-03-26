@@ -26,6 +26,8 @@ const toArtworkResponse = (artwork) => {
     dimensions: raw.dimensions,
     price: raw.price,
     main_image: raw.main_image,
+    images: raw.images || [],
+    primary_image_index: raw.primary_image_index || 0,
     status: raw.status,
     created_at: raw.created_at,
     artist_id: raw.artist_id,
@@ -126,11 +128,14 @@ exports.findAll = async (req, res) => {
 
     const artworks = await Artwork.findAll({
       where,
-      include,
-      order: [["created_at", "DESC"]]
+      include
     });
 
-    res.status(200).send(artworks.map(toArtworkResponse));
+    const sortedArtworks = [...artworks].sort(
+      (first, second) => new Date(second.created_at) - new Date(first.created_at)
+    );
+
+    res.status(200).send(sortedArtworks.map(toArtworkResponse));
   } catch (error) {
     res.status(500).send({ message: error.message || "Error retrieving artworks." });
   }
@@ -163,6 +168,26 @@ exports.create = async (req, res) => {
       });
     }
 
+    // Procesar múltiples imágenes si se proporcionan
+    let images = [];
+    let primaryImageIndex = 0;
+    
+    if (req.body.images && typeof req.body.images === 'string') {
+      try {
+        const parsedImages = JSON.parse(req.body.images);
+        images = Array.isArray(parsedImages) ? parsedImages : [];
+        primaryImageIndex = parseInt(req.body.primary_image_index || 0, 10);
+      } catch (e) {
+        images = [];
+      }
+    }
+    
+    // Si no hay imágenes en array, usar main_image como principal
+    if (images.length === 0) {
+      images = [{ url: mainImage, isPrimary: true }];
+      primaryImageIndex = 0;
+    }
+
     const artwork = await Artwork.create({
       artist_id: artistId,
       title: req.body.title,
@@ -172,6 +197,8 @@ exports.create = async (req, res) => {
       dimensions: req.body.dimensions || "",
       price,
       main_image: mainImage,
+      images,
+      primary_image_index: primaryImageIndex,
       status: req.body.status || "disponible"
     });
 
@@ -199,6 +226,20 @@ exports.update = async (req, res) => {
     }
 
     const mainImage = buildImagePath(req);
+    
+    // Procesar múltiples imágenes si se proporcionan
+    let images = artwork.images || [];
+    let primaryImageIndex = artwork.primary_image_index || 0;
+    
+    if (req.body.images && typeof req.body.images === 'string') {
+      try {
+        const parsedImages = JSON.parse(req.body.images);
+        images = Array.isArray(parsedImages) ? parsedImages : images;
+        primaryImageIndex = parseInt(req.body.primary_image_index || primaryImageIndex, 10);
+      } catch (e) {
+        // Mantener imágenes existentes si hay error de parseo
+      }
+    }
 
     await artwork.update({
       artist_id: artistId || artwork.artist_id,
@@ -209,6 +250,8 @@ exports.update = async (req, res) => {
       dimensions: req.body.dimensions !== undefined ? req.body.dimensions : artwork.dimensions,
       price: parsedPrice,
       main_image: mainImage || artwork.main_image,
+      images,
+      primary_image_index: primaryImageIndex,
       status: req.body.status !== undefined ? req.body.status : artwork.status
     });
 

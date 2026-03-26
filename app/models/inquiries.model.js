@@ -49,7 +49,21 @@ module.exports = (sequelize, Sequelize) => {
       }
     },
     {
-      timestamps: false
+      timestamps: false,
+      indexes: [
+        {
+          name: "idx_inquiries_created_at",
+          fields: ["created_at"]
+        },
+        {
+          name: "idx_inquiries_status",
+          fields: ["status"]
+        },
+        {
+          name: "idx_inquiries_artwork_id",
+          fields: ["artwork_id"]
+        }
+      ]
     }
   );
 

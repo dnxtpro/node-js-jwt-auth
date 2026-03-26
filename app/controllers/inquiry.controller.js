@@ -51,12 +51,15 @@ exports.findAll = async (req, res) => {
           as: "artwork",
           attributes: ["id", "title", "main_image"]
         }
-      ],
-      order: [["created_at", "DESC"]]
+      ]
     });
 
+    const sortedInquiries = [...inquiries].sort(
+      (first, second) => new Date(second.created_at) - new Date(first.created_at)
+    );
+
     res.status(200).send({
-      data: inquiries
+      data: sortedInquiries
     });
   } catch (error) {
     res.status(500).send({

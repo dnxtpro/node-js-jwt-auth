@@ -40,6 +40,16 @@ module.exports = (sequelize, Sequelize) => {
       main_image: {
         type: Sequelize.STRING(255)
       },
+      images: {
+        type: Sequelize.JSON,
+        defaultValue: [],
+        comment: "Array de objetos: [{url: string, isPrimary: boolean}]"
+      },
+      primary_image_index: {
+        type: Sequelize.INTEGER,
+        defaultValue: 0,
+        comment: "Índice de la imagen principal en el array images"
+      },
       status: {
         type: Sequelize.ENUM("disponible", "reservado", "vendido"),
         defaultValue: "disponible"
